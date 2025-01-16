@@ -16,7 +16,7 @@ import javax.validation.Valid;
 /**
  * RegisterController
  * Description:
- *
+ * 报名接口
  * @author lotus
  * @version 1.0
  * @since 2025/1/15 下午8:17
