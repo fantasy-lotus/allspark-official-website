@@ -8,6 +8,8 @@ import com.allspark.allsparkofficialwebsite.common.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,7 +45,8 @@ public class ResourseController {
     private Path storagePath;
 
 
-    @PostConstruct
+//    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         // 获取项目根目录
         String projectDir = System.getProperty("user.dir");
