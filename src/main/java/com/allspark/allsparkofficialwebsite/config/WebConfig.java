@@ -18,20 +18,17 @@ import java.nio.file.Paths;
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    @Value("${storage.image.path}")
-    private String imageStoragePath;
-
-    @Value("${storage.json.path}")
-    private String jsonStoragePath;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String absolutePath = Paths.get(imageStoragePath).toAbsolutePath().toUri().toString();
         registry.addResourceHandler("/images/**")
-                .addResourceLocations(absolutePath)
+                .addResourceLocations("classpath:/static/images/")
                 .setCachePeriod(3600)
                 .resourceChain(true);
-
+        registry.addResourceHandler("/json/**")
+                .addResourceLocations("classpath:/static/json/")
+                .setCachePeriod(3600)
+                .resourceChain(true);
     }
 
 }

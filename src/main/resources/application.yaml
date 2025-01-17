@@ -64,6 +64,6 @@ logging:
     root: info
 storage:
     image:
-      path: uploads/img
+      path: src/main/resources/static/images
     json:
-      path: uploads/json
+      path: src/main/resources/static/json

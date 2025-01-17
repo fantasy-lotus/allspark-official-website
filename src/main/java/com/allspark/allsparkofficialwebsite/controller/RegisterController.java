@@ -6,6 +6,8 @@ import com.allspark.allsparkofficialwebsite.common.ResultUtils;
 import com.allspark.allsparkofficialwebsite.model.User;
 import com.allspark.allsparkofficialwebsite.model.dto.UserRequest;
 import com.allspark.allsparkofficialwebsite.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +26,7 @@ import javax.validation.Valid;
 @RestController
 public class RegisterController {
 
+    private static final Logger log = LoggerFactory.getLogger(RegisterController.class);
     @Autowired
     UserService userService;
 
@@ -36,6 +39,7 @@ public class RegisterController {
         newUser.setDirection(user.getDirection());
         newUser.setProgress(user.getProgress());
         boolean save = userService.save(newUser);
+        log.info("用户注册:{}", newUser);
         if (save) {
             return ResultUtils.success(newUser.getUserId());
         } else {
