@@ -25,7 +25,7 @@ public class UserRequest {
      */
     @NotBlank(message = "QQ号不能为空")
     @Pattern(regexp = "^\\d+$", message = "QQ号码只能包含数字")
-    @Size(max = 11, message = "QQ号码长度不能超过15")
+    @Size(max = 15, message = "QQ号码长度不能超过15")
     private String qqNumber;
 
     /**
@@ -40,7 +40,7 @@ public class UserRequest {
       方向选择 前端 / 后端 / 产品
      */
     @NotBlank(message = "方向不能为空")
-    @Pattern(regexp = "^(前端|后端|产品)$", message = "方向只能是前端、后端或产品")
+    @Pattern(regexp = "^(前端|后端|产品经理)$", message = "方向只能是前端、后端或产品经理")
     private String direction;
 
     /**
