@@ -72,6 +72,7 @@ public class ResourseController {
     // 获取图片URL接口
     @GetMapping("/img/{imageName}")
     public BaseResponse getImageUrl(@PathVariable String imageName, HttpServletRequest request) {
+        log.info("获取图片URL: {}", imageName);
         if (!StringUtils.hasText(imageName)) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR, "参数为空");
         }
@@ -149,6 +150,7 @@ public class ResourseController {
     // 获取json数据
     @GetMapping("/json/{fileName}")
     public BaseResponse<String> getJsonData(@PathVariable("fileName") String fileName) {
+        log.info("获取JSON数据: {}", fileName);
         File jsonFile = Paths.get(jsonStoragePath, fileName).toAbsolutePath().normalize().toFile();
 
         // 判断文件是否存在

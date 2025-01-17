@@ -2,6 +2,9 @@
 create database if not exists allspark;
 # 使用数据库
 use allsaprk;
+
+# TRUNCATE TABLE user;
+
 # 创建表
 create table user
 (
