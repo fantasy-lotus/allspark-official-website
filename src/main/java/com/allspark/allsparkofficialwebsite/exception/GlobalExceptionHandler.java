@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse<?> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
-        log.error("MethodArgumentNotValidException");
+        log.error("MethodArgumentNotValidException {} {}",e.getMessage(),e.getParameter());
         return ResultUtils.error(ErrorCode.PARAMS_ERROR, e.getBindingResult().getFieldError().getDefaultMessage());
     }
     @ExceptionHandler(DuplicateKeyException.class)

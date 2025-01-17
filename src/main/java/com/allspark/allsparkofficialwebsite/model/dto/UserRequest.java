@@ -25,7 +25,7 @@ public class UserRequest {
      */
     @NotBlank(message = "QQ号不能为空")
     @Pattern(regexp = "^\\d+$", message = "QQ号码只能包含数字")
-    @Size(max = 11, message = "QQ号码长度不能超过11")
+    @Size(max = 11, message = "QQ号码长度不能超过15")
     private String qqNumber;
 
     /**
