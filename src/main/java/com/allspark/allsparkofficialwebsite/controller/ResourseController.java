@@ -1,7 +1,9 @@
 package com.allspark.allsparkofficialwebsite.controller;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.allspark.allsparkofficialwebsite.common.BaseResponse;
 import com.allspark.allsparkofficialwebsite.common.ErrorCode;
 import com.allspark.allsparkofficialwebsite.common.ResultUtils;
@@ -42,8 +44,12 @@ public class ResourseController {
     @Value("${storage.image.path}")
     private String imageStoragePath;
 
+    @Value("${storage.json.path}")
+    private String jsonStoragePath;
+
     private Path storagePath;
 
+    private Path jsonPath;
 
 //    @PostConstruct
     @EventListener(ApplicationReadyEvent.class)
@@ -52,6 +58,7 @@ public class ResourseController {
         String projectDir = System.getProperty("user.dir");
         // 解析存储路径
         storagePath = Paths.get(projectDir, imageStoragePath).toAbsolutePath().normalize();
+        jsonPath = Paths.get(projectDir, jsonStoragePath).toAbsolutePath().normalize();
         // 创建存储目录
         if (!Files.exists(storagePath)) {
             try {
@@ -64,12 +71,23 @@ public class ResourseController {
         } else {
             log.info("图片存储目录:{}", storagePath);
         }
+        if (!Files.exists(jsonPath)) {
+            try {
+                Files.createDirectories(jsonPath);
+                log.info("json存储目录已初始化:{}", jsonPath);
+            } catch (IOException e) {
+                log.error("无法创建json存储目录:{}", jsonPath, e);
+                throw new RuntimeException("无法初始化存储目录", e);
+            }
+        } else {
+            log.info("json存储目录:{}", jsonPath);
+        }
     }
 
     // 获取图片URL接口(已弃用)
     @Deprecated
-    @GetMapping("/url")
-    public BaseResponse getImageUrl(@RequestParam String imageName, HttpServletRequest request) {
+    @GetMapping("/img/{imageName}")
+    public BaseResponse getImageUrl(@PathVariable String imageName, HttpServletRequest request) {
         if (RandomUtils.nextInt(0, 100) < 114514) {
             return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "滚");
         }
@@ -93,16 +111,18 @@ public class ResourseController {
     }
 
     // 修改图片内容
-    @PostMapping("/update")
+    @PostMapping("/img/{imageName}")
     public BaseResponse updateImage(
-            @RequestParam @NotBlank(message = "图片名称不能为空")
+            @PathVariable @NotBlank(message = "图片名称不能为空")
             @Size(max = 255, message = "图片名称不能超过255个字符")
             String imageName,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
 
         log.info("收到更新图片的请求: {}", imageName);
-
-        // 1. 验证文件是否为空
+        if (request.getHeader("Authorization") == null || !request.getHeader("Authorization").equals("allspark520")) {
+            return ResultUtils.error(ErrorCode.NO_AUTH_ERROR, "Unauthorized");
+        }        // 1. 验证文件是否为空
         if (file.isEmpty()) {
             log.warn("上传的文件为空");
             return ResultUtils.error(ErrorCode.PARAMS_ERROR, "文件不能为空");
@@ -113,6 +133,10 @@ public class ResourseController {
         if (contentType == null || !contentType.startsWith("image/")) {
             log.warn("不支持的文件类型: {}", contentType);
             return ResultUtils.error(ErrorCode.PARAMS_ERROR, "仅允许上传图片文件");
+        }
+
+        if (CharSequenceUtil.contains(imageName, "..")) {
+            return ResultUtils.error(ErrorCode.PARAMS_ERROR, "非法请求");
         }
 
         try {
@@ -138,6 +162,37 @@ public class ResourseController {
         }
     }
 
+    // 获取json
+    @GetMapping("/json/{fileName}")
+    public BaseResponse<String> getJsonData(@PathVariable("fileName") String fileName) {
+        File jsonFile = jsonPath.resolve(fileName).normalize().toFile();
+
+        // 判断文件是否存在
+        if (!jsonFile.exists()) {
+            ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
+        }
+        return ResultUtils.success(FileUtil.readUtf8String(jsonFile));
+    }
+
+    // 更新 JSON 数据
+    @PostMapping("/json/{fileName}")
+    public BaseResponse updateJsonData(@PathVariable("fileName") String fileName, @RequestBody String jsonData,HttpServletRequest request) {
+        try {
+            if (request.getHeader("Authorization") == null || !request.getHeader("Authorization").equals("allspark520")) {
+                ResultUtils.error(ErrorCode.NO_AUTH_ERROR, "Unauthorized");
+            }
+            JSONUtil.parseObj(jsonData);
+            File jsonFile = jsonPath.resolve(fileName).normalize().toFile();
+            if (!jsonFile.exists()) {
+                FileUtil.touch(jsonFile);
+            }
+            FileUtil.writeUtf8String(jsonData, jsonFile);
+            return ResultUtils.success("更新成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "更新失败");
+        }
+    }
     /**
      * 解析图片路径，确保路径的规范性
      *
