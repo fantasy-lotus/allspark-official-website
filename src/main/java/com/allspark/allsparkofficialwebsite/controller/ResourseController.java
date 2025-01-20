@@ -98,12 +98,12 @@ public class ResourseController {
             @Size(max = 255, message = "图片名称不能超过255个字符")
             String imageName,
             @RequestParam("file") MultipartFile file,
-            HttpServletRequest request) {
+            @RequestParam("auth") String auth) {
 
         log.info("收到更新图片的请求: {}", imageName);
-//        if (request.getHeader("Authorization") == null || !request.getHeader("Authorization").equals("allspark520")) {
-//            return ResultUtils.error(ErrorCode.NO_AUTH_ERROR, "Unauthorized");
-//        }
+        if (!"allspark520".equals(auth)) {
+            return ResultUtils.error(ErrorCode.NO_AUTH_ERROR, "Unauthorized");
+        }
 
         // 1. 验证文件是否为空
         if (file.isEmpty()) {
@@ -162,10 +162,10 @@ public class ResourseController {
 
     // 更新 JSON 数据
     @PostMapping("/json/{fileName}")
-    public BaseResponse updateJsonData(@PathVariable("fileName") String fileName, @RequestBody String jsonData, HttpServletRequest request) {
+    public BaseResponse updateJsonData(@PathVariable("fileName") String fileName, @RequestBody String jsonData, @RequestParam("auth") String auth) {
         try {
             log.info("更新JSON数据: {}", fileName);
-            if (request.getHeader("Authorization") == null || !request.getHeader("Authorization").equals("allspark520")) {
+            if (!"allspark520".equals(auth)) {
                 return ResultUtils.error(ErrorCode.NO_AUTH_ERROR, "Unauthorized");
             }
             JSONUtil.parseObj(jsonData); // 验证JSON格式
@@ -183,5 +183,4 @@ public class ResourseController {
             return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "更新失败");
         }
     }
-
 }
