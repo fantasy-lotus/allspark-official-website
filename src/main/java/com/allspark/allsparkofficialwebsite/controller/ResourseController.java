@@ -6,10 +6,11 @@ import com.allspark.allsparkofficialwebsite.common.BaseResponse;
 import com.allspark.allsparkofficialwebsite.common.ErrorCode;
 import com.allspark.allsparkofficialwebsite.common.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,33 +42,27 @@ public class ResourseController {
     @Value("${storage.json.path}")
     private String jsonStoragePath;
 
-//    // 初始化存储路径
-//    @EventListener(ApplicationReadyEvent.class)
-//    public void init() {
-//        // 获取项目根目录
-//        String projectDir = System.getProperty("user.dir");
-//        // 解析静态资源路径
-//        storagePath = Paths.get(projectDir, "src/main/resources/static/images").toAbsolutePath().normalize();
-//        jsonPath = Paths.get(projectDir, "src/main/resources/static/json").toAbsolutePath().normalize();
-//
-//        // 创建存储目录
-//        createDirectoryIfNotExist(storagePath, "图片");
-//        createDirectoryIfNotExist(jsonPath, "JSON");
-//    }
-//
-//    private void createDirectoryIfNotExist(Path path, String resourceName) {
-//        if (!Files.exists(path)) {
-//            try {
-//                Files.createDirectories(path);
-//                log.info("{}存储目录已初始化:{}", resourceName, path);
-//            } catch (IOException e) {
-//                log.error("无法创建{}存储目录:{}", resourceName, path, e);
-//                throw new RuntimeException("无法初始化存储目录", e);
-//            }
-//        } else {
-//            log.info("{}存储目录:{}", resourceName, path);
-//        }
-//    }
+    // 初始化存储路径
+    @EventListener(ApplicationReadyEvent.class)
+    public void init() {
+        // 创建存储目录
+        createDirectoryIfNotExist(Paths.get(imageStoragePath).toAbsolutePath().normalize(), "图片");
+        createDirectoryIfNotExist(Paths.get(jsonStoragePath).toAbsolutePath().normalize(), "文本");
+    }
+
+    private void createDirectoryIfNotExist(Path path, String resourceName) {
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path);
+                log.info("{}存储目录已初始化:{}", resourceName, path);
+            } catch (IOException e) {
+                log.error("无法创建{}存储目录:{}", resourceName, path, e);
+                throw new RuntimeException("无法初始化存储目录", e);
+            }
+        } else {
+            log.info("{}存储目录:{}", resourceName, path);
+        }
+    }
 
     // 获取图片URL接口
     @GetMapping("/img/{imageName}")
@@ -80,13 +75,12 @@ public class ResourseController {
         if (imageName.contains("..")) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR, "非法请求");
         }
-
-        Path imageFile = Paths.get(imageStoragePath, imageName).toAbsolutePath();
-        if (!Files.exists(imageFile)) {
-            log.warn("未找到图片文件: {}", imageFile);
+        String imagePath = imageStoragePath + imageName;
+        Path targetPath = Paths.get(imagePath).toAbsolutePath().normalize();
+        File file = targetPath.toFile();
+        if (!file.exists()) {
             return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
         }
-
         String imageUrl = request.getScheme() + "://" + request.getHeader("Host") + "/api/images/" + imageName;
         return ResultUtils.success(imageUrl);
     }
@@ -121,38 +115,31 @@ public class ResourseController {
         if (imageName.contains("..")) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR, "非法请求");
         }
-
+        String imagePath = imageStoragePath + imageName;
+        Path targetPath = Paths.get(imagePath).toAbsolutePath().normalize();
+        File targetFile = targetPath.toFile();
+        if (!targetFile.exists()) {
+            return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
+        }
+        log.info("保存图片到: {}", imagePath);
+        // 保存文件
         try {
-            // 更新图片存储路径到 static/images
-            Path targetPath = Paths.get(imageStoragePath, imageName).toAbsolutePath();
-            log.info("保存图片到: {}", targetPath);
-
-            // 创建父目录（如果不存在）
-            Path parentDir = targetPath.getParent();
-            if (!Files.exists(parentDir)) {
-                Files.createDirectories(parentDir);
-                log.info("创建父目录: {}", parentDir);
-            }
-
-            // 保存文件
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
             log.info("图片保存成功: {}", targetPath);
-
             String imageUrl = "/images/" + imageName;
             return ResultUtils.success(imageUrl);
-
         } catch (IOException e) {
-            log.error("保存图片失败: {}", imageName, e);
-            return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "更新图片失败");
+            log.error("保存图片失败: {}", targetPath, e);
+            return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "保存图片失败");
         }
     }
 
     // 获取json数据
     @GetMapping("/json/{fileName}")
-    public BaseResponse<String> getJsonData(@PathVariable("fileName") String fileName) {
+    public BaseResponse getJsonData(@PathVariable("fileName") String fileName) {
         log.info("获取JSON数据: {}", fileName);
-        File jsonFile = Paths.get(jsonStoragePath, fileName).toAbsolutePath().normalize().toFile();
-
+        String jsonPath = jsonStoragePath + fileName;
+        File jsonFile = Paths.get(jsonPath).toAbsolutePath().normalize().toFile();
         // 判断文件是否存在
         if (!jsonFile.exists()) {
             return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
@@ -169,8 +156,8 @@ public class ResourseController {
                 return ResultUtils.error(ErrorCode.NO_AUTH_ERROR, "Unauthorized");
             }
             JSONUtil.parseObj(jsonData); // 验证JSON格式
-
-            File jsonFile = Paths.get(jsonStoragePath, fileName).toAbsolutePath().normalize().toFile();
+            String jsonPath = jsonStoragePath + fileName;
+            File jsonFile = Paths.get(jsonPath).toAbsolutePath().normalize().toFile();
             if (!jsonFile.exists()) {
                 FileUtil.touch(jsonFile);
             }
