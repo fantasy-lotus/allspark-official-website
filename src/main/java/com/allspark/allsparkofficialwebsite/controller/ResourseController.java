@@ -67,7 +67,6 @@ public class ResourseController {
     // 获取图片URL接口
     @GetMapping("/img/{imageName}")
     public BaseResponse getImageUrl(@PathVariable String imageName, HttpServletRequest request) {
-        log.info("获取图片URL: {}", imageName);
         if (!StringUtils.hasText(imageName)) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR, "参数为空");
         }
@@ -79,6 +78,7 @@ public class ResourseController {
         Path targetPath = Paths.get(imagePath).toAbsolutePath().normalize();
         File file = targetPath.toFile();
         if (!file.exists()) {
+            log.info("未找到文件: {}", targetPath);
             return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
         }
         String imageUrl = request.getScheme() + "://" + request.getHeader("Host") + "/api/images/" + imageName;
@@ -117,10 +117,6 @@ public class ResourseController {
         }
         String imagePath = imageStoragePath + imageName;
         Path targetPath = Paths.get(imagePath).toAbsolutePath().normalize();
-        File targetFile = targetPath.toFile();
-        if (!targetFile.exists()) {
-            return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
-        }
         log.info("保存图片到: {}", imagePath);
         // 保存文件
         try {
@@ -137,11 +133,11 @@ public class ResourseController {
     // 获取json数据
     @GetMapping("/json/{fileName}")
     public BaseResponse getJsonData(@PathVariable("fileName") String fileName) {
-        log.info("获取JSON数据: {}", fileName);
         String jsonPath = jsonStoragePath + fileName;
         File jsonFile = Paths.get(jsonPath).toAbsolutePath().normalize().toFile();
         // 判断文件是否存在
         if (!jsonFile.exists()) {
+            log.info("未找到文件: {}", fileName);
             return ResultUtils.error(ErrorCode.NOT_FOUND_ERROR, "未找到文件");
         }
         return ResultUtils.success(FileUtil.readUtf8String(jsonFile));

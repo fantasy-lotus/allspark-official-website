@@ -13,7 +13,7 @@ spring:
       max-request-size: 10MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/allsaprk?characterEncoding=utf8&useSSL=false&rewriteBatchedStatements=true&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/allspark?characterEncoding=utf8&useSSL=false&rewriteBatchedStatements=true&serverTimezone=Asia/Shanghai
     username: allspark
     password: allspark520
     type: com.alibaba.druid.pool.DruidDataSource
@@ -43,3 +43,7 @@ storage:
     path: static/images/
   json:
     path: static/json/
+
+logging:
+  level:
+    root: info
